@@ -1,0 +1,32 @@
+Name: Lollipop, a DFS Spimbot
+Made by: Jongwon, Aditya, Hangoo
+
+====== Strategy ======
+Our strategy is recursive DFS with uniform power washing every 3 steps. We heavily utilize the stack and global data segment (.data) to imitate DFS in MIPS.
+
+In short, the bot finds a walkable direction (top, right, bottom, left) from its current position. For each walkable direction, it moves according to the direction priority and marks the new position as visited. Then, it repeats the direction-search step on the new position, ignoring any visited (walkable) directions. While walking around, the bot power-washes every 3 steps; it solves a few puzzles and then washes for specified timer cycles.
+
+====== Parameterization ======
+We have parameterized many parts of our subroutines and tested them with different values to find the parameters for the highest score. The parameters are divided into three categories:
+
+1. Powerwash: radius, XY offset, duration, powerwash interval, number of puzzles solved
+2. DFS: direction priority (which direction to go first if multiple walkable directions)
+3. Navigation: min and max (x,y) tile coordinates the bot can access (to optimize cleaning windows)
+
+Furthermore, we modularized codes and added comments to make the code both easier to understand and extend. A few examples of callee-saved abstractions:
+
+- “find_walkable_directions” subroutine returns all (unvisited) walkable directions from a given (x,y) tile location.
+- “get_location_data” subroutine returns the tile data of a given (x,y) tile location (half-word).
+- “tile_walkable” and “tile_washable” subroutines return 0x0 or 0x1 depending on if a given (x,y) tile location’s map data (half-word) is walkable or washable (window and dirty).
+
+====== Focus & Inflections ======
+We focused on making the bot path selection a DFS problem because we wanted to remain flexible to different variants of the map. While DFS takes more cycles than hard-coding the walks, the bot can navigate and clean around any connected path (beyond the arena map). Thus, the bot can self-navigate randomly populated paths without us hard-coding different edge cases. The downside of the bot is that it doesn’t utilize the falling method, where a bot might intentionally fall to power-wash tiles/windows unreached by simply walking through connected tiles.
+
+We initially tried to implement an efficient power-washing algorithm where the bot would only wash around if there exists at least one window within the parameterized radius. However, we realized that this results in a lot of wasted cycles that could be used to solve puzzles or walk DFS. Furthermore, the computation happens at every position, leading to even more wasted cycles. Thus, we decided to stick with a powerwash mechanism of washing every 3 steps.
+
+====== Optimizations ======
+We minimized the number of branches for heavily used subroutines. We also tried to optimize the queen solver using DP (learned from 374!) but decided to stick with the default solution as we were tight on time.
+
+For example, “get_location_data” and “has_visited_position” subroutines reduced branches from 4 to 1 by utilizing slt when checking if a given (x,y) tile location is out of the range we used (x = 2..38 and y = 17..38).
+
+We also divided the DFS recursion into a concise and efficient manner, making it a modular callee-saved subroutine that can be called in any other recursive subroutine.
